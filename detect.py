@@ -5,14 +5,13 @@ from pathlib import Path
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
-from numpy import random
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
-from utils.torch_utils import select_device, load_classifier, time_synchronized
+from utils.torch_utils import select_device, time_synchronized
 
 
 def detect(save_img=False):
@@ -36,12 +35,6 @@ def detect(save_img=False):
     if half:
         model.half()  # to FP16
 
-    # Second-stage classifier
-    classify = False
-    if classify:
-        modelc = load_classifier(name='resnet101', n=2)  # initialize
-        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
-
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
@@ -53,8 +46,8 @@ def detect(save_img=False):
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
 
     # Get names and colors
-    names = model.module.names if hasattr(model, 'module') else model.names
-    colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(2)]
+    names = ['fox']
+    colors = [[212, 0, 219], [117, 117, 255]]
 
     is_not_wrote = False #Sarapultsev's var
 
@@ -78,11 +71,6 @@ def detect(save_img=False):
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         t2 = time_synchronized()
-
-
-        # Apply Classifier
-        if classify:
-            pred = apply_classifier(pred, modelc, img, im0s)
 
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
@@ -119,8 +107,7 @@ def detect(save_img=False):
                                 label = f'maybe... wait'
                                 plot_one_box(xyxy, im0, label=label, color=colors[int(cls)+1], line_thickness=3)
                     else:
-                        is_not_wrote=True
-
+                      is_not_wrote = True
                     dist-=1
                 elif dist == 1:
                     
@@ -188,7 +175,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--waiting', type=int, default=1, help='distance from frame to frame или спросите у Вани')
-    parser.add_argument('--is_view_waiting', type=bool, default=True, help='Показывать ли сомнения сети или спросите у Вани')
+    parser.add_argument('--is_view_waiting', default=False, action='store_true', help='Показывать ли сомнения сети или спросите у Вани')
     parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
