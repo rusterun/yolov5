@@ -84,6 +84,15 @@ def detect(save_img=False):
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]] # normalization gain whwh
             if len(det):
+                if len(det) > 1:
+                    tmp=[]
+                    for ob in det:
+                        tmp.append(ob[-2])
+                    val = (det[-2] == max(tmp)).nonzero(as_tuple=True)[0]
+                    for obi in range(len(det)):
+                        if obi != val:
+                            det[obi][:4] = torch.cuda.FloatTensor([0, 0, 0, 0])
+
 
                 if dist > 1 and opt.waiting > 1:
                     if opt.is_view_waiting: #hyperparametr --is_view_waiting
@@ -132,7 +141,7 @@ def detect(save_img=False):
 
                 else:
                     raise('maybe --waiting < 1, it must have arg > 0. Or ask Sarapultsev')
-            
+
 
             else:
                 dist=opt.waiting
