@@ -118,6 +118,8 @@ def detect(save_img=False):
                             if save_img or view_img:  # Add bbox to image
                                 label = f'maybe... wait'
                                 plot_one_box(xyxy, im0, label=label, color=colors[int(cls)+1], line_thickness=3)
+                    else:
+                        is_not_wrote=True
 
                     dist-=1
                 elif dist == 1:
