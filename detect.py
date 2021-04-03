@@ -1,18 +1,18 @@
 import argparse
 import time
 from pathlib import Path
-
+import os
 import xmltodict
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from dfgo import dbinsert, dboutput
-from fox import send_subscribes
+from spam import send_subscribes
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
-    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, FrameNumber
+    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, time_synchronized
 
@@ -30,16 +30,16 @@ cams = {
 }
 
 places = {
-[61.78526847055156,34.34672176837922]:'Шотмана ул. - Ленина пр.',
-[61.781778495233844,34.35643672943116]:'Анохина ул. - Гоголя ул.',
-[61.78303148253981,34.3603527545929]:'Антикайнена ул. - Гоголя ул.',
-[61.786133294167215,34.3504285812378]:'Ленина пр. - Анохина ул.',
-[61.78055589564591,34.3524992465973]:'Красноармейская ул. - Гоголя ул',
-[61.784822100456175,34.35787439346314]:'Антикайнена ул. - М.Горького ул.',
-[61.78371375577274,34.353818893432624]:'Анохина ул. - М.Горького ул.',
-[61.7823365120819,34.33016180992127]:'Ватутина ул - 2-я Северная ул.',
-[61.78189517232132,34.31914329528809]:'Чапаева ул. - Пархоменко ул.',
-[61.78855010622828,34.35263872146607]:'Антикайнена ул. - Красная ул.'
+"h1037.mp4":'Шотмана ул. - Ленина пр.',
+"h1265.mp4":'Анохина ул. - Гоголя ул.',
+"h1267.mp4":'Антикайнена ул. - Гоголя ул.',
+"h1281.mp4":'Ленина пр. - Анохина ул.',
+"h2047.mp4":'Красноармейская ул. - Гоголя ул',
+"h2857.mp4":'Антикайнена ул. - М.Горького ул.',
+"h3023.mp4":'Анохина ул. - М.Горького ул.',
+"h4293.mp4":'Ватутина ул - 2-я Северная ул.',
+"h1327.mp4":'Чапаева ул. - Пархоменко ул.',
+"h1235.mp4":'Антикайнена ул. - Красная ул.'
 }
 
 
@@ -161,7 +161,7 @@ def detect(src, save_img=False):
                 elif dist == 1:
                     fox+=1
                     first_frame=frame_number-7
-                    dbinsert('coords', f'{first_frame}, {coords[name]}')
+                    dbinsert('coords', f'{first_frame},{coords[0]}, {coords[1]}')
                     
                     
 
@@ -192,7 +192,7 @@ def detect(src, save_img=False):
                 dist=opt.waiting
                 is_not_wrote = True
                 if fox:
-                    send_subscribes(f"Лиса проехала\nГде? {places[coords[name]]}\nКак долго она была в кадре? {(frame_number-first_frame)//25} секунд")
+                    send_subscribes(f"Лиса проехала\nГде? {places[name]}\nКак долго она была в кадре? {(frame_number-first_frame)//25} секунд")
                     fox=0
 
             if is_not_wrote:
@@ -256,20 +256,20 @@ if __name__ == '__main__':
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
                 if opt.source.endswith('/'):
-                    for src in os.listdir(opt.source):
+                    for src in os.listdir(opt.source[:-1]):
                         detect(opt.source+src)
                 else:
                     detect(opt.source)
                 strip_optimizer(opt.weights)
         else:
             if opt.source.endswith('/'):
-                for src in os.listdir(opt.source):
+                for src in os.listdir(opt.source[:-1]):
                     detect(opt.source+src)
             else:
                 detect(opt.source)
     frtmp = dict()
     for coo in dboutput('coords'):
-        frtmp[coo[0]] = coo[1]
+        frtmp[coo[0]] = coo[1:]
     list_keys = list(frtmp.keys()).sort()
     res_dict = dict()
     num=0
