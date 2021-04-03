@@ -182,16 +182,16 @@ def detect(src, save_img=False):
                             label = f'{names[int(cls)]} {conf:.2f}'
                             plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
-                    else:
-                        raise('maybe --waiting < 1, it must have arg > 0. Or ask Sarapultsev')
-
-
                 else:
-                    dist=opt.waiting
-                    is_not_wrote = True
-                    if fox:
-                        send_subscribes(f"Лиса проехала\nГде? {places[name]}\nКак долго она была в кадре? {(frame_number-first_frame)//25} секунд")
-                        fox=0
+                    raise('maybe --waiting < 1, it must have arg > 0. Or ask Sarapultsev')
+
+
+            else:
+                dist=opt.waiting
+                is_not_wrote = True
+                if fox:
+                    send_subscribes(f"Лиса проехала\nГде? {places[name]}\nКак долго она была в кадре? {(frame_number-first_frame)//25} секунд")
+                    fox=0
 
             if is_not_wrote:
                 # Stream results
