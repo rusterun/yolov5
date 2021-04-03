@@ -9,6 +9,6 @@ def send(message, peer_id):
 
 def send_subscribes(mess="Fox проехала"):
     for id in dboutput('subscribes'):
-        send(mess, id)
+        send(mess, id['id'])
 
 print("Бот(3) запущен") #Пишем в консоль, чтобы знать, что проблем с авторизацией не было.
