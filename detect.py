@@ -6,7 +6,6 @@ import xmltodict
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
-from dfgo import dbinsert, dboutput
 from spam import send_subscribes
 
 from models.experimental import attempt_load
@@ -161,7 +160,6 @@ def detect(src, save_img=False):
                 elif dist == 1:
                     fox+=1
                     first_frame=frame_number-7
-                    dbinsert('coords', f'{first_frame},{coords[0]}, {coords[1]}')
                     
                     
 
@@ -268,8 +266,6 @@ if __name__ == '__main__':
             else:
                 detect(opt.source)
     frtmp = dict()
-    for coo in dboutput('coords'):
-        frtmp[coo[0]] = coo[1:]
     list_keys = list(frtmp.keys()).sort()
     res_dict = dict()
     num=0
