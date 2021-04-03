@@ -2,22 +2,58 @@ import argparse
 import time
 from pathlib import Path
 
+import xmltodict
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+from dfgo import dbinsert, dboutput
+from fox import send_subscribes
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
-    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
+    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, FrameNumber
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, time_synchronized
 
+cams = {
+"h1037.mp4"=[61.78526847055156,34.34672176837922],
+"h1265.mp4"=[61.781778495233844,34.35643672943116],
+"h1267.mp4"=[61.78303148253981,34.3603527545929],
+"h1281.mp4"=[61.786133294167215,34.3504285812378],
+"h2047.mp4"=[61.78055589564591,34.3524992465973],
+"h2857.mp4"=[61.784822100456175,34.35787439346314],
+"h3023.mp4"=[61.78371375577274,34.353818893432624],
+"h4293.mp4"=[61.7823365120819,34.33016180992127],
+"h1327.mp4"=[61.78189517232132,34.31914329528809],
+"h1235.mp4"=[61.78855010622828,34.35263872146607]
+}
 
-def detect(save_img=False):
-    dist, source, weights, view_img, save_txt, imgsz = opt.waiting, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+places = {
+[61.78526847055156,34.34672176837922]='Шотмана ул. - Ленина пр.',
+[61.781778495233844,34.35643672943116]='Анохина ул. - Гоголя ул.',
+[61.78303148253981,34.3603527545929]='Антикайнена ул. - Гоголя ул.',
+[61.786133294167215,34.3504285812378]='Ленина пр. - Анохина ул.',
+[61.78055589564591,34.3524992465973]='Красноармейская ул. - Гоголя ул',
+[61.784822100456175,34.35787439346314]='Антикайнена ул. - М.Горького ул.',
+[61.78371375577274,34.353818893432624]='Анохина ул. - М.Горького ул.',
+[61.7823365120819,34.33016180992127]='Ватутина ул - 2-я Северная ул.',
+[61.78189517232132,34.31914329528809]='Чапаева ул. - Пархоменко ул.',
+[61.78855010622828,34.35263872146607]='Антикайнена ул. - Красная ул.'
+}
+
+
+def detect(src, save_img=False):
+    dist, source, weights, view_img, save_txt, imgsz = opt.waiting, src, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
+    
+    if source.endswith('.mp4'):
+        name = source.split('/')[-1]
+        coords = cams[name]
+    else:
+        name = 'This format not поддерживается'
+        coords = [0,0]
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
@@ -71,8 +107,11 @@ def detect(save_img=False):
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         t2 = time_synchronized()
+        frame_number = 0
+        fox=0
 
         for i, det in enumerate(pred):  # detections per image
+            frame_number+=1
             if webcam:  # batch_size >= 1
                 p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
             else:
@@ -84,6 +123,7 @@ def detect(save_img=False):
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]] # normalization gain whwh
             if len(det):
+
                 if len(det) > 1:
                     tmp=[]
                     for ob in det:
@@ -119,7 +159,12 @@ def detect(save_img=False):
                       is_not_wrote = True
                     dist-=1
                 elif dist == 1:
+                    fox+=1
+                    first_frame=frame_number-7
+                    dbinsert('coords', f'{first_frame}, {coords[name]}')
                     
+                    
+
                     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
                     # Print results
@@ -146,6 +191,9 @@ def detect(save_img=False):
             else:
                 dist=opt.waiting
                 is_not_wrote = True
+                if fox:
+                    send_subscribes(f"Лиса проехала\nГде? {places[coords[name]]}\nКак долго она была в кадре? {(frame_number-first_frame)//25} секунд}")
+                    fox=0
 
             if is_not_wrote:
                 # Stream results
@@ -207,7 +255,32 @@ if __name__ == '__main__':
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detect()
+                if opt.source.endswith('/'):
+                    for src in os.listdir(opt.source):
+                        detect(opt.source+src)
+                else:
+                    detect(opt.source)
                 strip_optimizer(opt.weights)
         else:
-            detect()
+            if opt.source.endswith('/'):
+                for src in os.listdir(opt.source):
+                    detect(opt.source+src)
+            else:
+                detect(opt.source)
+    frtmp = dict()
+    for coo in dboutput('coords'):
+        frtmp[coo[0]] = coo[1]
+    list_keys = list(frtmp.keys()).sort()
+    res_dict = dict()
+    num=0
+    for i in list_keys:
+        num+=1
+        res_dict[num] = frtmp[i]
+    
+    with open('../data.xml', 'w') as f:
+        f.write(xmltodict.unparse(res_dict))
+
+
+    
+    
+
