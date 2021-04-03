@@ -3,7 +3,6 @@ from dfgo import dbinsert, dboutput
 from keyboard import create_key #keyboard(count, text, color='default', one_time=False, inline=False), key()
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-import config
 #импорт
 
 my_id = 109460407
