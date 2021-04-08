@@ -3,11 +3,12 @@ from dfgo import dbinsert, dboutput
 from keyboard import create_key #keyboard(count, text, color='default', one_time=False, inline=False), key()
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
+from conf import TOKEN
 #импорт
 
 my_id = 109460407
 
-vk_session = vk_api.VkApi(token="93bb564df2600c56bc902a86c6a130ded07afb7eac1eb9772c200b9215ea894beafa0a18ecefcbbc49b5e")
+vk_session = vk_api.VkApi(token=TOKEN)
 session_api = vk_session.get_api()
 longpoll = VkBotLongPoll(vk_session, 203734150)
 power = 1
