@@ -12,71 +12,45 @@ session_api = vk_session.get_api()
 longpoll = VkBotLongPoll(vk_session, 203734150)
 power = 1
 
-#Блок статичных переменных(констант)
-error = False
-ex = ' '
-
 def keyboard():
     key = open("key.js", "r+", encoding="Windows-1251").read()
     return key
 
 print("Бот(3) запущен") #Пишем в консоль, чтобы знать, что проблем с авторизацией не было.
 while True: #начало цикла
-    if True:
-        for event in longpoll.listen(): #прослушиваем все сообщени
-            print(event)
-		
-            if event.type == VkBotEventType.MESSAGE_NEW:
+    if True: #Когда-то здесь был try:
+	for event in longpoll.listen(): #прослушиваем все сообщени
 
-                #Объявление динамических переменных
-                mess = event.object.message['text']
-                peer_id = event.object.message['from_id']
+	    if event.type == VkBotEventType.MESSAGE_NEW:
 
-                def send(message=None, peer_id=peer_id):
-                    vk_session.method('messages.send', {'peer_id': peer_id, 'message': message, 'random_id': random.randint(-2147483648, +214783648)})
+		#Объявление динамических переменных
+		mess = event.object.message['text']
+		peer_id = event.object.message['from_id']
 
-                def ksend(key, message, peer_id=peer_id):
-                    vk_session.method("messages.send", { "peer_id": peer_id, "message": message, "random_id": random.randint(1, 2147483647), "keyboard": key})
-				
-                def subscribe_send(peer_id=peer_id):
-                    create_key([1], ['Подписаться'], ['primary'], True)
-                    key=keyboard()
-                    ksend(key, "&#128521;", peer_id)
+		def send(message=None, peer_id=peer_id):
+		    vk_session.method('messages.send', {'peer_id': peer_id, 'message': message, 'random_id': random.randint(-2147483648, +214783648)})
 
-                def subscribe(id=peer_id):
-                    dbinsert("subscribes", str(id))
-                    send('Вы подписались на уведомления о появлении Лисы', id)
-                
-                def send_subscribes(mess="Fox проехала"):
-                    for id in dboutput('subscribes'):
-                        send(mess, id)
-                
-                if mess == "Начать":
-                    print("S")
-                    subscribe_send(peer_id)
-                
-                if mess == "Подписаться":
-                    print("S")
-                    subscribe(peer_id)
-                
-                if mess == "23032017":
-                    print("S")
-                    power = 0
-            
-            if error == True:
-                send('Error: ' + ex)
-                error = False
+		def ksend(key, message, peer_id=peer_id):
+		    vk_session.method("messages.send", { "peer_id": peer_id, "message": message, "random_id": random.randint(1, 2147483647), "keyboard": key})
 
-				
+		def subscribe_send(peer_id=peer_id):
+		    create_key([1], ['Подписаться'], ['primary'], True)
+		    key=keyboard()
+		    ksend(key, "&#128521;", peer_id)
 
-				
+		def subscribe(id=peer_id):
+		    dbinsert("subscribes", str(id))
+		    send('Вы подписались на уведомления о появлении Лисы', id)
 
-				
+		def send_subscribes(mess="Fox проехала"):
+		    for id in dboutput('subscribes'):
+			send(mess, id)
 
-			
-						
-    '''except:
-        ex = str(Exception)
-        print(ex)
-        error = True
-        print("\n Error Time \n")'''
+		if mess == "Начать":
+		    subscribe_send(peer_id)
+
+		if mess == "Подписаться":
+		    subscribe(peer_id)
+
+		if mess == "23032017":
+		    power = 0
